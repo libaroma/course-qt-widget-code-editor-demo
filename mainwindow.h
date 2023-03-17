@@ -15,6 +15,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+
 private slots:
     void on_new_file_triggered();
 
@@ -48,9 +49,13 @@ private slots:
 
     void on_print_triggered();
 
+    void on_clear_history_triggered();
+
 private:
     Ui::MainWindow *ui;
     QString currentFile;
+    void initMenu();
+    void on_open_rencent_file();
 
 };
 #endif // MAINWINDOW_H

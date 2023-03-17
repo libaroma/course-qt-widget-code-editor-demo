@@ -4,6 +4,7 @@
 #include "QFileDialog"
 #include "QMessageBox"
 #include "QFontDialog"
+#include "QSettings"
 
 #if defined(QT_PRINTSUPPORT_LIB)
 #include <QtPrintSupport/qtprintsupportglobal.h>
@@ -16,12 +17,25 @@
 #endif
 
 
+QSettings * mSettings;
+
+//获取历史记录
+QList<QString> getHistory();
+//保存打开历史记录
+void saveHistory(QString path);
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     this->setCentralWidget(ui->textEdit);
+    if(mSettings==NULL){
+        mSettings = new QSettings("settings.ini",QSettings::IniFormat);
+    }
+
+    initMenu();
+
 #if !QT_CONFIG(printer)
     ui->print->setEnabled(false);
 #endif
@@ -32,12 +46,109 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//初始化菜单
+void MainWindow::initMenu()
+{
+    //获取Menu
+    QMenu * recent = this->findChild<QMenu *>("recent");
+    //获取Action
+    QSet<QObject *> chLists =recent->children().toSet();
+    foreach(QObject * ch,chLists){
+        QAction *action = (QAction *)ch;
+        //清空子菜单Action
+        recent->removeAction(action);
+    }
+
+    QList<QString> lists = getHistory();
+
+
+    for(int i=lists.size()-1 ;i>=0;i--){
+        //生成子菜单Action
+        recent->addAction(lists[i],this,&MainWindow::on_open_rencent_file);
+    }
+
+    if(lists.size()>0){
+        recent->addAction("清除历史记录",this,&MainWindow::on_clear_history_triggered,QKeySequence("Ctrl+Alt+Shift+C"));
+    }
+
+}
+
+
+//获取历史记录
+QList<QString> getHistory(){
+    //打开开始读
+    int size =mSettings->beginReadArray("history");
+
+    //创建返回对象
+    QList<QString> lists;
+    for(int i = 0;i<size;i++){
+        mSettings->setArrayIndex(i);
+        QString path = mSettings->value("path").toString();
+        lists.append(path);
+        qDebug()<<i<<":"<<path;
+    }
+    //关闭读
+    mSettings->endArray();
+
+    return lists;
+}
+
+
+//保存打开历史记录
+void saveHistory(QString path){
+
+    //获取历史
+    QList<QString> lists = getHistory();
+    foreach(QString str,lists){
+        if(str==path){
+            lists.removeOne(str);
+        }
+    }
+    lists.append(path);
+
+    //打开开始写入
+    mSettings->beginWriteArray("history");
+    for(int i =0;i<lists.size();i++){
+        mSettings->setArrayIndex(i);
+        //保存字符串
+        mSettings->setValue("path",lists[i]);
+    }
+
+    //关闭开始写入
+    mSettings->endArray();
+}
+
+
+
 //新建文件
 void MainWindow::on_new_file_triggered()
 {
     qDebug()<<"Start Create New File ...";
     currentFile.clear();
     ui->textEdit->setText("");
+}
+
+
+//打开文件
+void MainWindow::on_open_rencent_file()
+{
+    QAction * action = (QAction *)sender();
+
+    QString fileName = action->text();
+
+    QFile file(fileName);
+    if(!file.open(QIODevice::ReadOnly|QFile::Text)){
+        QMessageBox::warning(this,"警告","无法打开此文件"+file.errorString());
+        return;
+    }
+    currentFile = fileName;
+    setWindowTitle(fileName);
+    QTextStream in(&file);
+    QString text = in.readAll();
+    ui->textEdit->setText(text);
+    file.close();
+    saveHistory(currentFile);
+    initMenu();
 }
 
 //打开文件
@@ -55,6 +166,9 @@ void MainWindow::on_open_file_triggered()
     QString text = in.readAll();
     ui->textEdit->setText(text);
     file.close();
+
+    saveHistory(currentFile);
+    initMenu();
 }
 
 
@@ -78,6 +192,8 @@ void MainWindow::on_save_file_triggered()
     QString text =ui->textEdit->toHtml();
     out<<text;
     file.close();
+    saveHistory(currentFile);
+    initMenu();
 }
 
 //另存为
@@ -95,6 +211,8 @@ void MainWindow::on_save_as_triggered()
     QString text =ui->textEdit->toHtml();
     out<<text;
     file.close();
+    saveHistory(currentFile);
+    initMenu();
 }
 
 //复制
@@ -180,5 +298,13 @@ void MainWindow::on_about_triggered()
 void MainWindow::on_exit_triggered()
 {
     QCoreApplication::exit();
+}
+
+
+void MainWindow::on_clear_history_triggered()
+{
+    qDebug()<<"on_clear_history_triggered clicked...";
+    mSettings->remove("history");
+    initMenu();
 }
 
