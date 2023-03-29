@@ -33,7 +33,7 @@
 
 ### Github
 
-[course-qt-widget-notepad-demo](https://github.com/libaroma/course-qt-widget-notepad-demo/blob/master/README.md)
+[course-qt-widget-notepad-demo](https://github.com/libaroma/course-qt-widget-code-editor-demo)
 
 ## 一 项目创建
 
