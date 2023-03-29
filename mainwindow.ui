@@ -18,14 +18,35 @@
     <normaloff>:/images/images/pencil.png</normaloff>:/images/images/pencil.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTextEdit" name="textEdit">
+   <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>13</x>
-      <y>10</y>
-      <width>131</width>
-      <height>111</height>
+      <x>30</x>
+      <y>40</y>
+      <width>127</width>
+      <height>80</height>
      </rect>
+    </property>
+    <property name="tabShape">
+     <enum>QTabWidget::Rounded</enum>
+    </property>
+    <property name="currentIndex">
+     <number>-1</number>
+    </property>
+    <property name="elideMode">
+     <enum>Qt::ElideMiddle</enum>
+    </property>
+    <property name="documentMode">
+     <bool>false</bool>
+    </property>
+    <property name="tabsClosable">
+     <bool>true</bool>
+    </property>
+    <property name="movable">
+     <bool>true</bool>
+    </property>
+    <property name="tabBarAutoHide">
+     <bool>false</bool>
     </property>
    </widget>
   </widget>
@@ -66,11 +87,8 @@
     <addaction name="paste"/>
     <addaction name="cut"/>
     <addaction name="separator"/>
-    <addaction name="bolder"/>
-    <addaction name="italics"/>
-    <addaction name="underline"/>
-    <addaction name="separator"/>
     <addaction name="font"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -123,9 +141,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="bolder"/>
-   <addaction name="italics"/>
-   <addaction name="underline"/>
    <addaction name="font"/>
   </widget>
   <widget class="QToolBar" name="toolBar_4">
@@ -236,51 +251,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
-   </property>
-  </action>
-  <action name="bolder">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="images.qrc">
-     <normaloff>:/images/images/bold.png</normaloff>:/images/images/bold.png</iconset>
-   </property>
-   <property name="text">
-    <string>加粗</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+B</string>
-   </property>
-  </action>
-  <action name="italics">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="images.qrc">
-     <normaloff>:/images/images/italic.png</normaloff>:/images/images/italic.png</iconset>
-   </property>
-   <property name="text">
-    <string>斜体</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+I</string>
-   </property>
-  </action>
-  <action name="underline">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="images.qrc">
-     <normaloff>:/images/images/underline.png</normaloff>:/images/images/underline.png</iconset>
-   </property>
-   <property name="text">
-    <string>下划线</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+U</string>
    </property>
   </action>
   <action name="font">

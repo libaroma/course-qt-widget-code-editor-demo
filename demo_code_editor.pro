@@ -12,13 +12,22 @@ qtHaveModule(printsupport): QT+=printsupport
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    mycodeeditor.cpp \
+    myhighlighter.cpp \
+    mytextedit.cpp \
+    mytexteditbycode.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    mycodeeditor.h \
+    myhighlighter.h \
+    mytextedit.h \
+    mytexteditbycode.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    mytextedit.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -26,4 +35,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
+    code.qrc \
     images.qrc
+
+RC_ICONS = images/logo.ico
