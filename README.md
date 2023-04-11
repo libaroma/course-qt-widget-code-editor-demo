@@ -33,7 +33,11 @@
 
 ### Github
 
+<<<<<<< HEAD
 [Course-Qt-Qidget-Code-Editor-Demo](https://github.com/libaroma/course-qt-widget-code-editor-demo))
+=======
+[course-qt-widget-notepad-demo](https://github.com/libaroma/course-qt-widget-code-editor-demo)
+>>>>>>> cc7b32af1b949d863771b71647f9b0a5df5080a7
 
 ## 一 项目创建
 
