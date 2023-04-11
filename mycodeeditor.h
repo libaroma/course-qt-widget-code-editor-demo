@@ -4,6 +4,7 @@
 #include "myhighlighter.h"
 
 #include <QPlainTextEdit>
+#include <QCompleter>
 
 class LineNumberWidget;
 
@@ -29,19 +30,22 @@ public:
 
     bool checkSaved();
 
-
 private slots:
     void highlightCurrentLine();
     void updateLineNumberWidget(QRect rect, int dy);
     void updateLineNumberWidgetWidth();
     void updateSaveState();
 
+    void insertCompletion(const QString &completion);
+
 protected:
-    void resizeEvent(QResizeEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
+    void keyPressEvent(QKeyEvent * event) override;
 
 private:
     void initConnection();
     void initHighlighter();
+    void initCompleter();
     int getLineNumberWidgetWidth();
 
 
@@ -50,6 +54,7 @@ private:
 
     QString mFileName;
     bool isSaved = false;
+    QCompleter * mCompleter;
 
 signals:
 

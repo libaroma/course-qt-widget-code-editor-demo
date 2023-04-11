@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,45 +17,13 @@
    <iconset resource="images.qrc">
     <normaloff>:/images/images/pencil.png</normaloff>:/images/images/pencil.png</iconset>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="tabWidget">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>40</y>
-      <width>127</width>
-      <height>80</height>
-     </rect>
-    </property>
-    <property name="tabShape">
-     <enum>QTabWidget::Rounded</enum>
-    </property>
-    <property name="currentIndex">
-     <number>-1</number>
-    </property>
-    <property name="elideMode">
-     <enum>Qt::ElideMiddle</enum>
-    </property>
-    <property name="documentMode">
-     <bool>false</bool>
-    </property>
-    <property name="tabsClosable">
-     <bool>true</bool>
-    </property>
-    <property name="movable">
-     <bool>true</bool>
-    </property>
-    <property name="tabBarAutoHide">
-     <bool>false</bool>
-    </property>
-   </widget>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1200</width>
      <height>23</height>
     </rect>
    </property>
@@ -69,7 +37,7 @@
      </property>
     </widget>
     <addaction name="new_file"/>
-    <addaction name="open_file"/>
+    <addaction name="open_dir"/>
     <addaction name="recent"/>
     <addaction name="separator"/>
     <addaction name="save_file"/>
@@ -100,7 +68,6 @@
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
@@ -112,7 +79,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="new_file"/>
-   <addaction name="open_file"/>
+   <addaction name="open_dir"/>
    <addaction name="print"/>
    <addaction name="save_file"/>
    <addaction name="save_as"/>
@@ -169,6 +136,7 @@
    <addaction name="about"/>
    <addaction name="exit"/>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <action name="new_file">
    <property name="icon">
     <iconset resource="images.qrc">
@@ -181,13 +149,16 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="open_file">
+  <action name="open_dir">
    <property name="icon">
     <iconset resource="images.qrc">
      <normaloff>:/images/images/open.png</normaloff>:/images/images/open.png</iconset>
    </property>
    <property name="text">
-    <string>打开文件</string>
+    <string>打开文件夹</string>
+   </property>
+   <property name="toolTip">
+    <string>打开文件夹</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>

@@ -14,16 +14,22 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mycodeeditor.cpp \
+    myfilesystemmodel.cpp \
     myhighlighter.cpp \
+    mysplitterlayout.cpp \
     mytextedit.cpp \
-    mytexteditbycode.cpp
+    mytexteditbycode.cpp \
+    mytreeview.cpp
 
 HEADERS += \
     mainwindow.h \
     mycodeeditor.h \
+    myfilesystemmodel.h \
     myhighlighter.h \
+    mysplitterlayout.h \
     mytextedit.h \
-    mytexteditbycode.h
+    mytexteditbycode.h \
+    mytreeview.h
 
 FORMS += \
     mainwindow.ui \

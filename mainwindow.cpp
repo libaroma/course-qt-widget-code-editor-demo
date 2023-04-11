@@ -1,9 +1,14 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
 #include <QDebug>
-#include "QFileDialog"
-#include "QMessageBox"
-#include "QFontDialog"
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFontDialog>
+#include <QDateTime>
+#include <QClipboard>
+#include <QDesktopServices>
+#include <QProcess>
 
 
 #if defined(QT_PRINTSUPPORT_LIB)
@@ -19,11 +24,16 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , mFontFamily("Consolas")
+    , mFontSize(14)
+    , mSplitterLayout(0)
 {
     ui->setupUi(this);
-    this->setCentralWidget(ui->tabWidget);
 
     mSettings = new QSettings("settings.ini",QSettings::IniFormat);
+
+    mDir = mSettings->value("config/dir","E:/").toString();
+
 
     //初始化菜单
     initMenu();
@@ -32,7 +42,16 @@ MainWindow::MainWindow(QWidget *parent)
     initFont();
 
     //初始化动作
-    initAction();
+    initAction(0);
+
+    mSplitterLayout = new MySplitterLayout(this,mDir,mFontFamily,mFontSize);
+
+    connect(mSplitterLayout,SIGNAL(finishCreateTab(const QString &)),this,SLOT(onFinishCreateTab(const QString &)));
+
+
+    setCentralWidget(mSplitterLayout);
+
+
 
 #if !QT_CONFIG(printer)
     ui->print->setEnabled(false);
@@ -46,13 +65,13 @@ MainWindow::~MainWindow()
 
 
 void MainWindow::initFont(){
-    mFontFamily = mSettings->value("font_family","Consolas").toString();
-    mFontSize = mSettings->value("font_size",14).toInt();
+    mFontFamily = mSettings->value("config/font_family","Consolas").toString();
+    mFontSize = mSettings->value("config/font_size",14).toInt();
 }
 
-void MainWindow::initAction()
+void MainWindow::initAction(int tabCount)
 {
-    bool valid =ui->tabWidget->count()>0;
+    bool valid =tabCount>0;
     ui->save_file->setEnabled(valid);
     ui->save_as->setEnabled(valid);
     ui->copy->setEnabled(valid);
@@ -109,7 +128,6 @@ QList<QString> MainWindow::getHistory(){
 }
 
 
-
 //保存打开历史记录
 void MainWindow::saveHistory(QString path){
 
@@ -139,58 +157,36 @@ void MainWindow::saveHistory(QString path){
 //新建文件
 void MainWindow::on_new_file_triggered()
 {
-    ui->tabWidget->addTab(new MyCodeEditor(this,QFont(mFontFamily,mFontSize)),"NewFile.xjy");
-    initAction();
+    mSplitterLayout->getTreeView()->newFile();
+
 }
 
 
 //打开最近文件
 void MainWindow::on_open_rencent_file()
 {
-    createTab(((QAction *)sender())->text());
+    mSplitterLayout->createTab(((QAction *)sender())->text());
 }
 
 //打开文件
-void MainWindow::on_open_file_triggered()
+void MainWindow::on_open_dir_triggered()
 {
-    createTab(QFileDialog::getOpenFileName(this,"打开文件"));
-}
-
-//创建tab
-void MainWindow::createTab(QString fileName)
-{
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly|QFile::Text)){
-        QMessageBox::warning(this,"警告","无法打开此文件:"+file.errorString());
-        return;
-    }
-
-    QTextStream in(&file);
-    QString text = in.readAll();
-
-    //创建对象
-    MyCodeEditor * codeEditor = new MyCodeEditor(this,QFont(mFontFamily,mFontSize));
-    codeEditor->setPlainText(text);
-
-    //设置文件名
-    codeEditor->setFileName(fileName);
-    //添加tab
-    ui->tabWidget->addTab(codeEditor,fileName);
-    //设置当前索引
-    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
-
-    file.close();
-    saveHistory(fileName);
-    initMenu();
-    initAction();
+    QString dirFromSetttings = mSettings->value("dir",mDir).toString();
+    QString dir = QFileDialog::getExistingDirectory(this,"选择文件夹",dirFromSetttings,QFileDialog::ShowDirsOnly);
+    if(dir.isEmpty()) return;
+    mSettings->setValue("config/dir",dir);
+    mDir = dir;
+    mSplitterLayout->setDir(mDir);
+//    setTreeViewModel();
+   mSplitterLayout->getLabel()->setText(mDir);
 }
 
 
 //保存文件
 void MainWindow::on_save_file_triggered()
-{    
+{
     //把保存交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         if(codeEditor->saveFile()){
             saveSuccessAction(codeEditor);
@@ -202,7 +198,7 @@ void MainWindow::on_save_file_triggered()
 void MainWindow::on_save_as_triggered()
 {
     //把另存为交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         if(codeEditor->saveAsFile()){
             saveSuccessAction(codeEditor);
@@ -214,7 +210,7 @@ void MainWindow::on_save_as_triggered()
 void MainWindow::on_copy_triggered()
 {
     //把复制交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         codeEditor->copy();
     }
@@ -224,7 +220,7 @@ void MainWindow::on_copy_triggered()
 void MainWindow::on_paste_triggered()
 {
     //把粘贴交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         codeEditor->paste();
     }
@@ -234,7 +230,7 @@ void MainWindow::on_paste_triggered()
 void MainWindow::on_cut_triggered()
 {
     //把剪切交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         codeEditor->cut();
     }
@@ -244,7 +240,7 @@ void MainWindow::on_cut_triggered()
 void MainWindow::on_undo_triggered()
 {
     //把撤销交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         codeEditor->undo();
     }
@@ -254,7 +250,7 @@ void MainWindow::on_undo_triggered()
 void MainWindow::on_redo_triggered()
 {
     //把取消撤销交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
         codeEditor->redo();
     }
@@ -266,13 +262,9 @@ void MainWindow::on_font_triggered()
     bool fontSelected;
     QFont font = QFontDialog::getFont(&fontSelected,QFont(mFontFamily,mFontSize),this);
     if(fontSelected){
-        //把字体交给CodeEditor
-        MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
-        if(codeEditor){
-            codeEditor->setAllFont(font);
-        }
-        mSettings->setValue("font_family",font.family());
-        mSettings->setValue("font_size",font.pointSize());
+        mSplitterLayout->setFont(QFont(font.family(),font.pointSize()));
+        mSettings->setValue("config/font_family",font.family());
+        mSettings->setValue("config/font_size",font.pointSize());
     }
 }
 
@@ -280,7 +272,7 @@ void MainWindow::on_font_triggered()
 void MainWindow::on_print_triggered()
 {
     //把打印交给CodeEditor
-    MyCodeEditor *codeEditor = (MyCodeEditor* )ui->tabWidget->currentWidget();
+    MyCodeEditor *codeEditor = (MyCodeEditor* )mSplitterLayout->getTabWidget()->currentWidget();
     if(codeEditor){
 #if defined(QT_PRINTSUPPORT_LIB) && QT_CONFIG(printer)
         QPrinter printDev;
@@ -314,43 +306,30 @@ void MainWindow::on_clear_history_triggered()
     initMenu();
 }
 
-
-void MainWindow::on_tabWidget_tabCloseRequested(int index)
-{
-    MyCodeEditor * codeEditor = (MyCodeEditor*)ui->tabWidget->currentWidget();
-
-    if(!codeEditor->checkSaved()){
-        QMessageBox::StandardButton btn = QMessageBox::question(this,"警告","您还没有保存文档！是否保存？",QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
-
-        if(btn ==QMessageBox::Yes){
-            if(codeEditor->saveFile())
-                saveSuccessAction(codeEditor);
-            return;
-        }else if(btn ==QMessageBox::Cancel)
-            return;
-    }
-    ui->tabWidget->removeTab(index);
-    delete codeEditor;
-    initAction();
-}
-
 void MainWindow::saveSuccessAction( MyCodeEditor * codeEditor)
 {
     QString fileName  = codeEditor->getFileName();
     //保存历史
     saveHistory(fileName);
     //设置tab标题
-    ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),fileName);
+    mSplitterLayout->getTabWidget()->setTabText(mSplitterLayout->getTabWidget()->currentIndex(),fileName);
     //初始化菜单
     initMenu();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if(ui->tabWidget->count()>0){
+    if(mSplitterLayout->getTabWidget()->count()>0){
         QMessageBox::question(this,
                               "警告",
                               "有未保存的文件，确定要关闭吗？",
                               QMessageBox::Yes|QMessageBox::No)==QMessageBox::Yes?event->accept():event->ignore();
     }
+}
+
+void MainWindow::onFinishCreateTab(const QString &filePath)
+{
+    saveHistory(filePath);
+    initMenu();
+    initAction(mSplitterLayout->getTabWidget()->count());
 }

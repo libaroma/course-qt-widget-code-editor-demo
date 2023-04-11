@@ -6,10 +6,16 @@
 #include <QScrollBar>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStringListModel>
+#include <QAbstractItemView>
 
 #include<QDebug>
 
-MyCodeEditor::MyCodeEditor(QWidget *parent,QFont font) : QPlainTextEdit(parent)
+MyCodeEditor::MyCodeEditor(QWidget *parent,QFont font)
+    : QPlainTextEdit(parent)
+    , lineNumberWidget(0)
+    , mHighlighter(0)
+    , mCompleter(0)
 {
     lineNumberWidget = new LineNumberWidget(this);
 
@@ -18,6 +24,10 @@ MyCodeEditor::MyCodeEditor(QWidget *parent,QFont font) : QPlainTextEdit(parent)
 
     //高亮
     initHighlighter();
+
+    //设置completor
+    initCompleter();
+
 
     //设置字体
     setAllFont(font);
@@ -28,7 +38,12 @@ MyCodeEditor::MyCodeEditor(QWidget *parent,QFont font) : QPlainTextEdit(parent)
     //设置边距
     updateLineNumberWidgetWidth();
 
+    //不自动换行
     setLineWrapMode(QPlainTextEdit::NoWrap);
+
+    //去掉边框
+    setFrameShape(QPlainTextEdit::NoFrame);
+
 }
 
 MyCodeEditor::~MyCodeEditor()
@@ -55,6 +70,10 @@ void MyCodeEditor::setAllFont(QFont font)
 {
     this->setFont(font);
     mHighlighter->setFont(font);
+    mHighlighter->rehighlight();
+    mCompleter->popup()->setFont(font);
+    viewport()->update();
+    lineNumberWidget->update();
     updateLineNumberWidgetWidth();
 }
 
@@ -65,7 +84,27 @@ bool MyCodeEditor::checkSaved()
 
 void MyCodeEditor::initHighlighter()
 {
-   mHighlighter =  new MyHighlighter(document());
+    mHighlighter =  new MyHighlighter(document());
+}
+
+void MyCodeEditor::initCompleter()
+{
+    mCompleter = new QCompleter();
+
+    QStringList list;
+    list<<"int"<<"init"<<"void"<<"while"<<"completer"<<"abstract"<<"apple";
+    list.sort(Qt::CaseInsensitive);
+
+    QStringListModel * model = new QStringListModel(list,mCompleter);
+
+    mCompleter->setModel(model);
+    mCompleter->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
+    mCompleter->setWrapAround(false);
+
+    mCompleter->setWidget(this);
+    mCompleter->setCompletionMode(QCompleter::PopupCompletion);
+
+    connect(mCompleter,SIGNAL(activated(const QString &)),this,SLOT(insertCompletion(const QString &)));
 }
 
 int MyCodeEditor::getLineNumberWidgetWidth()
@@ -109,17 +148,96 @@ void MyCodeEditor::updateSaveState()
     isSaved = false;
 }
 
+void MyCodeEditor::insertCompletion(const QString &completion)
+{
+    QTextCursor cursor = textCursor();
+
+
+
+    int length =completion.length()-mCompleter->completionPrefix().length();
+
+    cursor.movePosition(QTextCursor::Left);
+    cursor.movePosition(QTextCursor::EndOfWord);
+
+    cursor.insertText(completion.right(length));
+
+    setTextCursor(cursor);
+}
+
 void MyCodeEditor::resizeEvent(QResizeEvent *event)
 {
     QPlainTextEdit::resizeEvent(event);
     lineNumberWidget->setGeometry(0,0,getLineNumberWidgetWidth(),contentsRect().height());
 }
 
+void MyCodeEditor::keyPressEvent(QKeyEvent *event)
+{
+    switch(event->key()){
+    case Qt::Key_ParenLeft:
+        textCursor().insertText(")");
+        break;
+    case Qt::Key_BracketLeft:
+        textCursor().insertText("]");
+        break;
+    case Qt::Key_BraceLeft:
+        textCursor().insertText("}");
+        break;
+    case Qt::Key_QuoteDbl:
+        textCursor().insertText("\"");
+        break;
+    case Qt::Key_Apostrophe:
+        textCursor().insertText("'");
+        break;
+    case Qt::Key_Enter:
+    case Qt::Key_Backtab:
+    case Qt::Key_Return:
+    case Qt::Key_Escape:
+    case Qt::Key_Tab:
+        if(mCompleter->popup()->isVisible()){
+            event->ignore();
+            return;
+        }
+    }
+    //Alt + C
+    bool isShortCut = (event->modifiers()&Qt::AltModifier)&&event->key()==Qt::Key_C;
+
+    if(!isShortCut)
+        QPlainTextEdit::keyPressEvent(event);
+
+    if(event->key()==Qt::Key_ParenLeft||
+            event->key()==Qt::Key_BracketLeft||
+            event->key()==Qt::Key_BraceLeft||
+            event->key()==Qt::Key_QuoteDbl||
+            event->key()==Qt::Key_Apostrophe){
+        QTextCursor cursor = textCursor();
+        cursor.movePosition(QTextCursor::Left);
+        setTextCursor(cursor);
+    }
+
+    QTextCursor cursor = textCursor();
+    cursor.select(QTextCursor::WordUnderCursor);
+    QString prefix = cursor.selectedText();
+    QString endSign = "~!@#$%^&*()_-+=\\/,.。；？?‘'\"{}[]<>";
+    if(!isShortCut&&(endSign.contains(event->text().right(1))||prefix.length()<2)){
+        mCompleter->popup()->hide();
+        return;
+    }
+
+    if(mCompleter->completionPrefix()!=prefix){
+      mCompleter->setCompletionPrefix(prefix);
+      mCompleter->popup()->setCurrentIndex(mCompleter->completionModel()->index(0,0));
+    }
+    QRect rect = cursorRect();
+    rect.setWidth(mCompleter->popup()->sizeHintForColumn(0)+mCompleter->popup()->verticalScrollBar()->sizeHint().width());
+
+    mCompleter->complete(rect);
+}
+
 void MyCodeEditor::lineNumberWidgetPaintEvent(QPaintEvent *event)
 {
     QPainter painter(lineNumberWidget);
     //绘制行号区域
-    painter.fillRect(event->rect(),QColor(100,100,100,20));
+    painter.fillRect(event->rect(),QColor(100,100,100,10));
 
     //拿到block
     QTextBlock block = firstVisibleBlock();

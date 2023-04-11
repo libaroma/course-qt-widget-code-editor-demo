@@ -1,11 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "mycodeeditor.h"
-
 #include <QMainWindow>
-
 #include "QSettings"
+
+#include "myfilesystemmodel.h"
+#include "mycodeeditor.h"
+#include "mysplitterlayout.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -20,6 +21,7 @@ public:
     ~MainWindow();
 
     void saveSuccessAction( MyCodeEditor * codeEditor);
+    void addFolder(QString filePath);
 
 protected:
 
@@ -29,7 +31,7 @@ protected:
 private slots:
     void on_new_file_triggered();
 
-    void on_open_file_triggered();
+    void on_open_dir_triggered();
 
     void on_save_file_triggered();
 
@@ -55,7 +57,7 @@ private slots:
 
     void on_clear_history_triggered();
 
-    void on_tabWidget_tabCloseRequested(int index);
+    void onFinishCreateTab(const QString &filePath);
 
 private:
     Ui::MainWindow *ui;
@@ -64,9 +66,12 @@ private:
     QString mFontFamily;
     int mFontSize;
 
+    QString mDir="E:/";
+
     void initMenu();
     void initFont();
-    void initAction();
+    void initAction(int tabCount);
+
 
 
     void on_open_rencent_file();
@@ -75,7 +80,9 @@ private:
 
     void createTab(QString fileName);
 
+    void setTreeViewModel();
 
+     MySplitterLayout *mSplitterLayout ;
 
 };
 #endif // MAINWINDOW_H

@@ -8,6 +8,13 @@ MyHighlighter::MyHighlighter(QTextDocument *parent, QString fontFamily, int font
     mFontFamily =fontFamily;
     mFontSize = fontSize;
 
+
+    initFormat();
+
+}
+
+void MyHighlighter::initFormat()
+{
     //对于普通文本
     addNormalTextFormat();
 
@@ -29,7 +36,6 @@ MyHighlighter::MyHighlighter(QTextDocument *parent, QString fontFamily, int font
     //对于方法/函数
     addFunctionFormat();
 }
-
 void MyHighlighter::setFont(QFont font)
 {
     mFontFamily = font.family();
@@ -44,7 +50,6 @@ void MyHighlighter::addNormalTextFormat()
 
     QTextCharFormat normalTextFormat;
 
-    normalTextFormat.setFont(QFont(mFontFamily,mFontSize));
     normalTextFormat.setForeground(QColor(0,0,0));
 
     rule.format = normalTextFormat;
@@ -59,7 +64,6 @@ void MyHighlighter::addNumberFormat()
 
     QTextCharFormat numberFormat;
 
-    numberFormat.setFont(QFont(mFontFamily,mFontSize));
     numberFormat.setForeground(QColor(250,80,50));
 
     rule.format = numberFormat;
@@ -71,7 +75,6 @@ void MyHighlighter::addStringFormat()
 {
     QTextCharFormat stringFormat;
 
-    stringFormat.setFont(QFont(mFontFamily,mFontSize));
     stringFormat.setForeground(QColor(0,180,180));
 
 
@@ -97,7 +100,6 @@ void MyHighlighter::addCommentFormat()
 {
     QTextCharFormat commnetFormat;
 
-    commnetFormat.setFont(QFont(mFontFamily,mFontSize));
     commnetFormat.setForeground(Qt::darkGreen);
     commnetFormat.setFontItalic(true);
 
@@ -122,7 +124,6 @@ void MyHighlighter::addMultiLineCommentFormat(const QString &text)
 
     //高亮格式
     QTextCharFormat multiLineCommentFormat;
-    multiLineCommentFormat.setFont(QFont(mFontFamily,mFontSize));
     multiLineCommentFormat.setForeground(Qt::darkGreen);
     multiLineCommentFormat.setFontItalic(true);
 
@@ -154,7 +155,6 @@ void MyHighlighter::addKeywordsFromat()
 
     HighlightRule rule ;
     QTextCharFormat keywordsFormat;
-    keywordsFormat.setFont(QFont(mFontFamily,mFontSize));
     keywordsFormat.setForeground(Qt::darkYellow);
     rule.format = keywordsFormat;
 
@@ -177,7 +177,6 @@ void MyHighlighter::addClassNameFormat()
     HighlightRule rule;
 
     QTextCharFormat classNameFormat;
-    classNameFormat.setFont(QFont(mFontFamily,mFontSize));
     classNameFormat.setForeground(QColor(150,20,100));
     classNameFormat.setFontWeight(99);
 
@@ -192,7 +191,6 @@ void MyHighlighter::addFunctionFormat()
     HighlightRule rule;
 
     QTextCharFormat functionFormat;
-    functionFormat.setFont(QFont(mFontFamily,mFontSize));
     functionFormat.setForeground(QColor(200,0,150));
 
     rule.format = functionFormat;
@@ -214,7 +212,9 @@ void MyHighlighter::highlightBlock(const QString &text)
         int index = regExp.indexIn(text);
         while(index>=0){
             int length =regExp.matchedLength();
-            setFormat(index,length,rule.format);
+            QTextCharFormat format =  rule.format;
+            format.setFont(QFont(mFontFamily,mFontSize));
+            setFormat(index,length,format);
             index = regExp.indexIn(text,index+length);
         }
     }
@@ -222,4 +222,5 @@ void MyHighlighter::highlightBlock(const QString &text)
     //对于多行注释
     addMultiLineCommentFormat(text);
 }
+
 
